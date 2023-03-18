@@ -9,6 +9,11 @@
 # DISCLAIMER OF ALL WARRANTIES.
 ################################################################################
 
+# Preserve existing "import" command (for OpenSees 3.4 and beyond)
+if {[info commands import] eq "import"} {
+    rename import oldload
+}
+
 # import --
 #
 # Helper procedure to handle the majority of cases for importing Tcl packages
