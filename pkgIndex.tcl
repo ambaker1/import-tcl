@@ -1,1 +1,1 @@
-package ifneeded import 0.1.0 [list source [file join $dir import.tcl]]
+package ifneeded import 0.2.0 [list source [file join $dir import.tcl]]

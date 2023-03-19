@@ -10,41 +10,59 @@
 ################################################################################
 
 # Preserve existing "import" command (for OpenSees 3.4 and beyond)
-if {[info commands import] eq "import"} {
-    rename import oldload
+if {[info commands ::import] eq "::import"} {
+    rename ::import ::oldload
 }
 
 # import --
 #
 # Helper procedure to handle the majority of cases for importing Tcl packages
 # 
-# import <$patterns from> $package <$reqs ...>
+# import <$patterns from> $package <$version> <as $namespace>
 # 
-# $patterns:    Patterns for namespace import (appends to package namespace)
+# $patterns:    Glob patterns for importing commands from package
 # $package:     Package name (must have corresponding namespace)
-# $reqs:        Package version requirements
+# $version:     Package version (optional, uses most recent otherwise)
+# $namespace:   Namespace to import into. Default current namespace.
 # 
 # Examples
-# import foo 1.0
-# import bar from foo 1.0
+# import foo
 # import * from foo
-# import b* from foo 1.0
+# import bar from foo 1.0
 
-proc import {args} {
-    if {[lindex $args 1] eq "from"} {
-        # User specified pattern(s)
-        set patterns [lindex $args 0]
-        set pkgArgs [lrange $args 2 end]
-        set version [uplevel 1 [list package require {*}$pkgArgs]]
-        foreach pattern $patterns {
-            uplevel 1 [list namespace import [lindex $pkgArgs 0]::$pattern]
+proc ::import {args} {
+    # Parse arguments
+    if {[llength $args] == 0 || [llength $args] > 6} {
+        return -code error "wrong # of args"
+    }
+    # Default optional settings
+    set patterns *
+    set version ""
+    set ns [namespace current]
+    # Switch for arity
+    if {[llength $args] <= 2} {
+        # Simplest case
+        lassign $args package version
+    } elseif {[lindex $args 1] eq "from"} {
+        # User specified patterns
+        lassign $args patterns from package version as ns
+    } elseif {[lindex $args end-1] eq "as"} {
+        # User specified namespace
+        set package [lindex $args 0]
+        set ns [lindex $args end]
+        # Get optional version
+        if {[llength $args] == 4} {
+            set version [lindex $args 1]
         }
     } else {
-        # Default case (import all)
-        set version [uplevel 1 [list package require {*}$args]]
-        uplevel 1 [list namespace import [lindex $args 0]::*]
+        return -code error "incorrect input"
     }
+    # Add prefixes to patterns
+    set patterns [lmap pattern $patterns {string cat :: $package :: $pattern}]
+    # Require package, import commands, and return version number
+    set version [namespace eval :: [list package require $package {*}$version]]
+    namespace eval $ns [list namespace import {*}$patterns]
     return $version
 }
 
-package provide import 0.1.0
+package provide import 0.2.0
