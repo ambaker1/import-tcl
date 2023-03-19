@@ -22,5 +22,5 @@ import bar from foo
 import foo 1.0 as f
 ```
 
-## License
+## License:
 See the file "LICENSE" for information on usage, redistribution, and for a DISCLAIMER OF ALL WARRANTIES.
